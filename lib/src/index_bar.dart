@@ -1,9 +1,7 @@
-import 'dart:ui';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
-
 import 'package:flutter/services.dart';
 
 /// IndexHintBuilder.
@@ -514,6 +512,8 @@ class _BaseIndexBarState extends State<BaseIndexBar> {
   int lastIndex = -1;
   int _widgetTop = 0;
 
+  ScrollController _scrollController = ScrollController();
+
   /// get index.
   int _getIndex(double offset) {
     int index = offset ~/ widget.itemHeight;
@@ -559,40 +559,73 @@ class _BaseIndexBarState extends State<BaseIndexBar> {
       );
     });
 
-    return GestureDetector(
-      onVerticalDragDown: (DragDownDetails details) {
-        RenderBox? box = _getRenderBox(context);
-        if (box == null) return;
-        Offset topLeftPosition = box.localToGlobal(Offset.zero);
-        _widgetTop = topLeftPosition.dy.toInt();
-        int index = _getIndex(details.localPosition.dy);
-        if (index >= 0) {
-          lastIndex = index;
-          _triggerDragEvent(IndexBarDragDetails.actionDown);
-        }
-      },
-      onVerticalDragUpdate: (DragUpdateDetails details) {
-        int index = _getIndex(details.localPosition.dy);
-        if (index >= 0 && lastIndex != index) {
-          lastIndex = index;
-          //HapticFeedback.lightImpact();
-          //HapticFeedback.vibrate();
-          _triggerDragEvent(IndexBarDragDetails.actionUpdate);
-        }
-      },
-      onVerticalDragEnd: (DragEndDetails details) {
-        _triggerDragEvent(IndexBarDragDetails.actionEnd);
-      },
-      onVerticalDragCancel: () {
-        _triggerDragEvent(IndexBarDragDetails.actionCancel);
-      },
-      onTapUp: (TapUpDetails details) {
-        //_triggerDragEvent(IndexBarDragDetails.actionUp);
-      },
-      behavior: HitTestBehavior.translucent,
+    return Container(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: children,
+        children: [
+          InkWell(
+            child: Icon(
+              Icons.arrow_drop_up,
+              color: Colors.black87,
+            ),
+            onTap: () {
+              debugPrint('Down arrow clicked');
+              _scrollController.jumpTo(0);
+            },
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: GestureDetector(
+                onVerticalDragDown: (DragDownDetails details) {
+                  RenderBox? box = _getRenderBox(context);
+                  if (box == null) return;
+                  Offset topLeftPosition = box.localToGlobal(Offset.zero);
+                  _widgetTop = topLeftPosition.dy.toInt();
+                  int index = _getIndex(details.localPosition.dy);
+                  if (index >= 0) {
+                    lastIndex = index;
+                    _triggerDragEvent(IndexBarDragDetails.actionDown);
+                  }
+                },
+                onVerticalDragUpdate: (DragUpdateDetails details) {
+                  int index = _getIndex(details.localPosition.dy);
+                  if (index >= 0 && lastIndex != index) {
+                    lastIndex = index;
+                    //HapticFeedback.lightImpact();
+                    //HapticFeedback.vibrate();
+                    _triggerDragEvent(IndexBarDragDetails.actionUpdate);
+                  }
+                },
+                onVerticalDragEnd: (DragEndDetails details) {
+                  _triggerDragEvent(IndexBarDragDetails.actionEnd);
+                },
+                onVerticalDragCancel: () {
+                  _triggerDragEvent(IndexBarDragDetails.actionCancel);
+                },
+                onTapUp: (TapUpDetails details) {
+                  //_triggerDragEvent(IndexBarDragDetails.actionUp);
+                },
+                behavior: HitTestBehavior.translucent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: children,
+                ),
+              ),
+            ),
+          ),
+          InkWell(
+            child: Icon(
+              Icons.arrow_drop_down,
+              color: Colors.black87,
+            ),
+            onTap: () {
+              debugPrint('Down arrow clicked');
+              _scrollController
+                  .jumpTo(_scrollController.position.maxScrollExtent);
+            },
+          ),
+        ],
       ),
     );
   }
