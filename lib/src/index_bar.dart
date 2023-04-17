@@ -512,7 +512,50 @@ class _BaseIndexBarState extends State<BaseIndexBar> {
   int lastIndex = -1;
   int _widgetTop = 0;
 
+  bool topScrollEnable = false;
+  bool bottomScrollEnable = false;
+
   ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController.addListener(() {
+      double maxScroll = _scrollController.position.maxScrollExtent;
+      double currentScroll = _scrollController.position.pixels;
+
+      setState(() {
+        if (currentScroll == 0) {
+          topScrollEnable = false;
+          bottomScrollEnable = true;
+        } else if (currentScroll == maxScroll) {
+          bottomScrollEnable = false;
+          topScrollEnable = true;
+        } else {
+          bottomScrollEnable = true;
+          topScrollEnable = true;
+        }
+      });
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      double maxScroll = _scrollController.position.maxScrollExtent;
+      double currentScroll = _scrollController.position.pixels;
+      setState(() {
+        if (maxScroll == 0) {
+          topScrollEnable = false;
+          bottomScrollEnable = false;
+        } else if (currentScroll == 0) {
+          topScrollEnable = false;
+          bottomScrollEnable = true;
+        } else {
+          topScrollEnable = true;
+          bottomScrollEnable = true;
+        }
+      });
+    });
+  }
 
   /// get index.
   int _getIndex(double offset) {
@@ -563,15 +606,20 @@ class _BaseIndexBarState extends State<BaseIndexBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          InkWell(
-            child: Icon(
-              Icons.arrow_drop_up,
-              color: Colors.black87,
+          Opacity(
+            opacity: topScrollEnable ? 1 : 0,
+            child: InkWell(
+              child: Icon(
+                Icons.arrow_drop_up,
+                color: Colors.black87,
+              ),
+              onTap: topScrollEnable
+                  ? () {
+                      debugPrint('Down arrow clicked');
+                      _scrollController.jumpTo(0);
+                    }
+                  : null,
             ),
-            onTap: () {
-              debugPrint('Down arrow clicked');
-              _scrollController.jumpTo(0);
-            },
           ),
           Flexible(
             child: SingleChildScrollView(
@@ -614,16 +662,21 @@ class _BaseIndexBarState extends State<BaseIndexBar> {
               ),
             ),
           ),
-          InkWell(
-            child: Icon(
-              Icons.arrow_drop_down,
-              color: Colors.black87,
+          Opacity(
+            opacity: bottomScrollEnable ? 1 : 0,
+            child: InkWell(
+              child: Icon(
+                Icons.arrow_drop_down,
+                color: Colors.black87,
+              ),
+              onTap: bottomScrollEnable
+                  ? () {
+                      debugPrint('Down arrow clicked');
+                      _scrollController
+                          .jumpTo(_scrollController.position.maxScrollExtent);
+                    }
+                  : null,
             ),
-            onTap: () {
-              debugPrint('Down arrow clicked');
-              _scrollController
-                  .jumpTo(_scrollController.position.maxScrollExtent);
-            },
           ),
         ],
       ),
